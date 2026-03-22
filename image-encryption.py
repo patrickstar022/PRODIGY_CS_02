@@ -1,47 +1,57 @@
-import argparse
 from pathlib import Path
+import argparse
+from PIL import Image
+import numpy as np
 
-def xor_byte(data:bytes,key:bytes)->bytes:
-    if not key:
-        raise ValueError("Key must not be empty")
-    key_length=len(key)
-    return bytes(byte^key[index%key_length] for index,byte in enumerate(data))
 
-def process_image(input_path:Path,output_path:Path,key:str)->None:
-    data=input_path.read_bytes()
-    transformed=xor_byte(data,key.encode("utf-8"))
-    output_path.write_bytes(transformed)
+def encrypt(input_path:Path,output_path:Path,key:int):
+    img=Image.open(input_path)
+    img_arr=np.array(img, dtype=np.int16)
+    encrypted_arr=(img_arr+key)%256
+    encrypted_img=Image.fromarray(encrypted_arr.astype("uint8"))
+    encrypted_img.save(output_path)
 
-def main()->None:
-    parser=argparse.ArgumentParser(
+def decrypt(input_path:Path,output_path:Path,key:int):
+    img=Image.open(input_path)
+    img_arr=np.array(img, dtype=np.int16)
+    decrypted_arr=(img_arr-key)%256
+    decrypted_img=Image.fromarray(decrypted_arr.astype("uint8"))
+    decrypted_img.save(output_path)
+
+
+parser=argparse.ArgumentParser(
         description="Encrypt or Decrypt an image"
     )
-    parser.add_argument(
+parser.add_argument(
         "mode",
         choices=["encrypt","decrypt"],
         help="Operation to perform. Please choose one option",
     )
-    parser.add_argument(
+parser.add_argument(
         "input",
         help="Input path of the image"
     )
-    parser.add_argument(
+parser.add_argument(
         "key",
         help="A key used to encrypt/decrypt"
     )
-    args=parser.parse_args()
+args=parser.parse_args()
 
-    input_path=Path(args.input)
-    if args.mode=="encrypt":
-        output_path=input_path.with_suffix(".pfp")
-    else:
-        output_path=input_path.with_suffix(".png")
+input_path=Path(args.input)
+if not input_path.is_file():
+    raise FileNotFoundError("Please enter the correct path")
 
-    if not input_path.is_file():
-        raise FileNotFoundError("Please enter the correct path")
+try:
+    key=int(args.key)
+except ValueError:
+    raise ValueError("Key must be an integer")
+
+if args.mode=="encrypt":
+    output_path=input_path.with_name("encrypted.png")
+    encrypt(input_path,output_path,key)
+
+else:
+    output_path=input_path.with_name("decrypted.png")
+    decrypt(input_path,output_path,key)
     
-    process_image(input_path,output_path,args.key)
-    print(f"{args.mode}ed file written to: {output_path}")
-
-if __name__=="__main__":
-    main() 
+print(f"{args.mode}ed file as {str(output_path)}")
