@@ -3,55 +3,69 @@ import argparse
 from PIL import Image
 import numpy as np
 
+def encrypt_image(input_path:Path, output_path:Path, method:str):
+    image = Image.open(input_path).convert("RGB")
+    image_array = np.array(image).astype("uint16")
 
-def encrypt(input_path:Path,output_path:Path,key:int):
-    img=Image.open(input_path)
-    img_arr=np.array(img, dtype=np.int16)
-    encrypted_arr=(img_arr+key)%256
-    encrypted_img=Image.fromarray(encrypted_arr.astype("uint8"))
-    encrypted_img.save(output_path)
+    if method == "swap":
+        encrypted_pixels = swap_pixels(image_array)
+    elif method == "math":
+        encrypted_pixels = math_operation("encrypt",image_array)
+    else:
+        raise ValueError("Choose 'swap' or 'math' as method.")
 
-def decrypt(input_path:Path,output_path:Path,key:int):
-    img=Image.open(input_path)
-    img_arr=np.array(img, dtype=np.int16)
-    decrypted_arr=(img_arr-key)%256
-    decrypted_img=Image.fromarray(decrypted_arr.astype("uint8"))
-    decrypted_img.save(output_path)
+    Image.fromarray(encrypted_pixels.astype("uint8"), "RGB").save(output_path)
+    print(f"✅ Encryption successful! Saved to: {output_path}")
+
+def decrypt_image(input_path:Path, output_path:Path, method:str):
+    image = Image.open(input_path).convert("RGB")
+    image_array = np.array(image).astype("uint16")
+
+    if method == "swap":
+        decrypted_pixels = swap_pixels(image_array)
+    elif method == "math":
+        decrypted_pixels = math_operation("decrypt",image_array)
+    else:
+        raise ValueError("Choose 'swap' or 'math' as method.")
+
+    Image.fromarray(decrypted_pixels.astype("uint8"), "RGB").save(output_path)
+    print(f"🔓 Decryption successful! Saved to: {output_path}")
 
 
-parser=argparse.ArgumentParser(
-        description="Encrypt or Decrypt an image"
-    )
-parser.add_argument(
-        "mode",
-        choices=["encrypt","decrypt"],
-        help="Operation to perform. Please choose one option",
-    )
-parser.add_argument(
-        "input",
-        help="Input path of the image"
-    )
-parser.add_argument(
-        "key",
-        help="A key used to encrypt/decrypt"
-    )
-args=parser.parse_args()
+def swap_pixels(image_array: np.ndarray) -> np.ndarray:
+    swapped = image_array.copy()
+    rows, cols, _ = image_array.shape
+    for i in range(rows):
+        for j in range(0, cols - 1, 2):
+            swapped[i, j], swapped[i, j + 1] = (
+                swapped[i, j + 1],
+                swapped[i, j],
+            )
+    return swapped
 
-input_path=Path(args.input)
-if not input_path.is_file():
-    raise FileNotFoundError("Please enter the correct path")
+def math_operation(mode:str,image_array: np.ndarray) -> np.ndarray:
+    if(mode=="encrypt"):
+        result=(image_array + 37) % 256
+    else:
+        result=(image_array - 37) % 256
+    return result
 
-try:
-    key=int(args.key)
-except ValueError:
-    raise ValueError("Key must be an integer")
 
-if args.mode=="encrypt":
-    output_path=input_path.with_name("encrypted.png")
-    encrypt(input_path,output_path,key)
+def main():
+    parser = argparse.ArgumentParser(description="🖼️Image Encryption/Decryption Tool")
+    parser.add_argument("mode",choices=["encrypt", "decrypt"],help="Choose to encrypt or decrypt an image.",)
+    parser.add_argument("input", help="Path to the image file.")
+    parser.add_argument("output", help="Path to save the output")
+    parser.add_argument("--method",choices=["swap", "math"],help="Choose encryption method: 'swap' or 'math'.",)
 
-else:
-    output_path=input_path.with_name("decrypted.png")
-    decrypt(input_path,output_path,key)
-    
-print(f"{args.mode}ed file as {str(output_path)}")
+    args = parser.parse_args()
+
+    print("🔐 Processing...")
+    if args.mode == "encrypt":
+        encrypt_image(args.input, args.output, args.method)
+    else:
+        decrypt_image(args.input, args.output, args.method)
+
+
+if __name__ == "__main__":
+    main()
