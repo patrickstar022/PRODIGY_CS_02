@@ -3,12 +3,12 @@
 
 ## Features
 - Image encryption and decryption using pixel manipulation
-- XOR-based cipher implementation
+- Two encryption methods: pixel swapping and mathematical operations
 - File I/O for image processing
 - Simple and intuitive command-line interface
 
 ## How It Works
-The application encrypts images by manipulating pixel values using XOR operations with a secret key. Each pixel's RGB values are transformed, making the image unreadable without the correct decryption key.
+The application encrypts images by manipulating pixel values using two methods: swapping adjacent pixels horizontally or applying a mathematical transformation (adding 37 modulo 256). Decryption reverses these operations to restore the original image.
 
 ## Installation
 ```bash
@@ -19,19 +19,19 @@ pip install -r requirements.txt
 
 ## Usage
 ```bash
-python image_encryptor.py --encrypt input.png key output_encrypted.png
-python image_encryptor.py --decrypt output_encrypted.png key output_decrypted.png
+python image-encryption.py encrypt input.png output_encrypted.png --method {swap|math}
+python image-encryption.py decrypt output_encrypted.png output_decrypted.png --method {swap|math}
 ```
 
 ## Example
 ```bash
-python image_encryptor.py --encrypt photo.jpg mykey123 photo_encrypted.png
-python image_encryptor.py --decrypt photo_encrypted.png mykey123 photo_restored.jpg
+python image-encryption.py encrypt photo.jpg photo_encrypted.png --method math
+python image-encryption.py decrypt photo_encrypted.png photo_restored.jpg --method math
 ```
 
 ## Knowledge Gained
-- XOR cipher fundamentals and cryptography basics
-- Image processing with Python (PIL/Pillow)
+- Pixel manipulation techniques in image processing
+- Image processing with Python (PIL/Pillow and NumPy)
 - File handling and binary data manipulation
-- Command-line argument parsing
-- Encryption/decryption algorithm implementation
+- Command-line argument parsing with argparse
+- Basic encryption/decryption algorithm implementation
